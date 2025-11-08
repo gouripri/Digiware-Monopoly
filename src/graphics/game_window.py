@@ -17,6 +17,9 @@ class GameWindow:
         # Create game state (stores all game data in memory)
         self.game_state = GameState()
         
+        # Initialize all properties on the board
+        self.game_state.initialize_all_properties()
+        
         # Create renderers
         self.board_renderer = BoardRenderer(self.screen)
         

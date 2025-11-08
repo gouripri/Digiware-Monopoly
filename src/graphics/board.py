@@ -2,6 +2,7 @@
 Board rendering and layout
 """
 import pygame
+from src.utils.position_calculator import PositionCalculator
 
 class BoardRenderer:
     def __init__(self, screen):
@@ -13,6 +14,11 @@ class BoardRenderer:
         self.cell_count= 6     #10x10 board
         self.corner_size = self.board_size // 6 #makes corners 133.33px
         self.cell_size= (self.board_size - 2 * self.corner_size) /self.cell_count
+
+        # Position calculator for testing positions
+        self.position_calc = PositionCalculator(
+            self.board_size, self.margin, self.corner_size, self.cell_size
+        )
 
         #make the board an actual object
         self.board_surface = pygame.Surface((self.board_size, self.board_size))
@@ -35,6 +41,7 @@ class BoardRenderer:
 
         self.draw_corners()
         self.draw_tiles()
+        self.draw_position_numbers()  # Show position numbers for testing
 
     def draw_corners(self):
         c_size = self.corner_size
@@ -73,5 +80,21 @@ class BoardRenderer:
         for i in range(self.cell_count):
             y = margin + c + i * t
             pygame.draw.rect(self.screen, color, (margin+self.board_size - c, y, c, t), 2)
+    
+    def draw_position_numbers(self):
+        """Draw position numbers (0-27) on each space for testing/alignment"""
+        font = pygame.font.SysFont("monospace", 16)
+        
+        for position in range(28):
+            x, y, w, h = self.position_calc.get_position_rect(position)
+            
+            # Draw a colored rectangle to show the position
+            color = (100, 200, 255)  # Light blue for visibility
+            pygame.draw.rect(self.screen, color, (x, y, w, h), 1)
+            
+            # Draw position number
+            text = font.render(str(position), True, (0, 0, 0))
+            text_rect = text.get_rect(center=(x + w // 2, y + h // 2))
+            self.screen.blit(text, text_rect)
 
 

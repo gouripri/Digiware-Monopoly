@@ -8,7 +8,7 @@ class Player:
         self.name = name
         self.token_type = token_type  # e.g., 'top_hat', 'car', etc.
         self.money = starting_money
-        self.position = 0  # Board position (0-39)
+        self.position = 0  # Board position (0-27)
         self.properties = []  # List of Property objects owned
         
     def add_money(self, amount):
@@ -31,7 +31,7 @@ class Property:
     """Represents a property on the board"""
     def __init__(self, name, position, price, base_rent, color=None, property_type='property'):
         self.name = name
-        self.position = position  # Board position (0-39)
+        self.position = position  # Board position (0-27)
         self.price = price
         self.base_rent = base_rent  # Rent when owned (no houses/hotels)
         self.color = color  # Property color group
@@ -72,7 +72,10 @@ class GameState:
     """Manages the overall game state"""
     def __init__(self):
         self.players = []
-        self.properties = []
+        self.properties = []  # Flat list of all properties (for iteration)
+        # Position-indexed list: properties_by_position[position] = Property object
+        # None means no property at that position
+        self.properties_by_position = [None] * 28  # 28 board positions (0-27)
         self.current_player_index = 0
         
     def add_player(self, name, token_type):
@@ -82,9 +85,21 @@ class GameState:
         return player
     
     def add_property(self, name, position, price, base_rent, color=None, property_type='property'):
-        """Add a property to the game"""
+        """
+        Add a property to the game.
+        The property is stored at properties_by_position[position] for fast lookup.
+        """
+        if position < 0 or position >= 28:
+            raise ValueError(f"Position must be between 0 and 27, got {position}")
+        
         property_obj = Property(name, position, price, base_rent, color, property_type)
+        
+        # Store in position-indexed list
+        self.properties_by_position[position] = property_obj
+        
+        # Also keep in flat list for iteration
         self.properties.append(property_obj)
+        
         return property_obj
     
     def get_current_player(self):
@@ -94,11 +109,13 @@ class GameState:
         return self.players[self.current_player_index]
     
     def get_property_at_position(self, position):
-        """Get property at a specific board position"""
-        for prop in self.properties:
-            if prop.position == position:
-                return prop
-        return None
+        """
+        Get property at a specific board position (0-27).
+        Returns Property object or None if no property at that position.
+        """
+        if position < 0 or position >= 28:
+            return None
+        return self.properties_by_position[position]
     
     def buy_property(self, player, property_obj):
         """
@@ -180,4 +197,38 @@ class GameState:
     def next_turn(self):
         """Move to the next player's turn"""
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
+    
+    def initialize_all_properties(self):
+        """
+        Initialize all 28 properties on the board.
+        Call this once when setting up a new game.
+        Modify this to add your actual property data.
+        """
+        # Position 0: GO (bottom-left corner)
+        self.add_property("GO", 0, 0, 0, property_type='special')
+        
+        # Positions 1-6: Bottom row (left to right)
+        # TODO: Add your actual properties here
+        # Example:
+        # self.add_property("Mediterranean Avenue", 1, 60, 2, "brown")
+        # self.add_property("Baltic Avenue", 2, 60, 4, "brown")
+        # ... etc for positions 1-6
+        
+        # Position 7: Bottom-right corner
+        self.add_property("Jail", 7, 0, 0, property_type='special')
+        
+        # Positions 8-13: Right column (bottom to top)
+        # TODO: Add properties for positions 8-13
+        
+        # Position 14: Top-right corner
+        self.add_property("Free Parking", 14, 0, 0, property_type='special')
+        
+        # Positions 15-20: Top row (right to left)
+        # TODO: Add properties for positions 15-20
+        
+        # Position 21: Top-left corner
+        self.add_property("Go to Jail", 21, 0, 0, property_type='special')
+        
+        # Positions 22-27: Left column (top to bottom)
+        # TODO: Add properties for positions 22-27
 
