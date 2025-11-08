@@ -1,8 +1,10 @@
 """
 Main game window and rendering loop
+creates pygame window
 """
 import pygame
 from src.graphics.board import BoardRenderer
+from src.game_logic.game_state import GameState
 
 class GameWindow:
     def __init__(self):
@@ -11,18 +13,25 @@ class GameWindow:
         pygame.display.set_caption("Monopoly")
         self.clock = pygame.time.Clock()
         self.running = True
-
-        self.board_render = BoardRenderer(self.screen)
-
+        
+        # Create game state (stores all game data in memory)
+        self.game_state = GameState()
+        
+        # Create renderers
+        self.board_renderer = BoardRenderer(self.screen)
+        
     def run(self):
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
             
-            self.screen.fill((90, 140, 220))
-            # TODO: Render board, properties, tokens, etc.
-            self.board_render.render()
+            self.screen.fill((255, 255, 255))
+            
+            # Render board (base layer)
+            self.board_renderer.render()
+            
+            # TODO: Render properties, tokens, etc. on top
+            
             pygame.display.flip()
             self.clock.tick(60)
-
