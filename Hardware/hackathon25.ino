@@ -7,12 +7,12 @@
 #define addr 0x3c
 
 #include "Rotary_Encoder.h"
-
+#include "UI.h"
 
 //for this to make sense, view the timing diagram here: https://howtomechatronics.com/tutorials/arduino/rotary-encoder-works-use-arduino/
 
 
-Adafruit_SSD1306 display(width, height);
+
 
 
 
@@ -20,18 +20,7 @@ void setup() {
 
 
   //display setup
-  display.begin(SSD1306_SWITCHCAPVCC, addr);
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0,0);
-
-  display.println("DigiWare");
-
-  display.println("Monopoly");
-
-  display.display();
-  delay(200);
+  UI_setup();
 
   RotaryEncoder_setup();
 
@@ -53,14 +42,5 @@ void loop() {
 }
 
 
-void updateScreen(String text){
-  display.clearDisplay();
 
-  display.setCursor(0, 0);
-  display.println(text);
-
-  display.display();
-
-
-}
 
