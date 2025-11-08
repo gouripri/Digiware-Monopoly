@@ -1,18 +1,10 @@
-#include <Wire.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
 
-#define width 128
-#define height 32
-#define addr 0x3c
+
 
 #include "Rotary_Encoder.h"
 #include "UI.h"
-
+#include "nrf.h"
 //for this to make sense, view the timing diagram here: https://howtomechatronics.com/tutorials/arduino/rotary-encoder-works-use-arduino/
-
-
-
 
 
 
@@ -24,7 +16,8 @@ void setup() {
 
   RotaryEncoder_setup();
 
-
+  nrf_setup_transmitter();
+  //nrf_setup_reciever();
 
 }
 
