@@ -29,16 +29,7 @@ void setup() {
 }
 
 void loop() {
-  int t = turn();
-  if(t ==1){
-    Serial.println("Clockwise ");
-    delay(500);
-  }
-  if (t == -1){
-    Serial.println("CounterClockwise");
-    delay(500);
-  }
-  t=0;
+
 }
 
 
