@@ -1,5 +1,7 @@
 
 
+
+
 #include "UI.h"
 Adafruit_SSD1306 display(width, height);
 #define width 128
@@ -34,4 +36,3 @@ void updateScreen(String text){
 
 
 }
-
