@@ -17,12 +17,12 @@ const int START =0;
 const int PTURN = 1;
 const int WAIT = 2; 
 const int FINAL = 3;
+const int INSIDE_OPT = 1;
+const int OUTSIDE_OPT = 0; 
+const int AFTER_ROLL = 2; 
 
 void UI_setup();
 void updateScreen(String text);
-void Start_setup();
-void Pturn_setup();
-void Wait_setup();
-void Final_Setup();
+
 
 #endif
