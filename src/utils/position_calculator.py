@@ -26,15 +26,15 @@ class PositionCalculator:
         """
         Get the screen rectangle for a board position (0-27)
         
-        Board layout (starting from bottom-left, going clockwise):
-        - Position 0: Bottom-left corner
-        - Positions 1-6: Bottom row (left to right) - 6 properties
-        - Position 7: Bottom-right corner
-        - Positions 8-13: Right column (bottom to top) - 6 properties
-        - Position 14: Top-right corner
-        - Positions 15-20: Top row (right to left) - 6 properties
-        - Position 21: Top-left corner
-        - Positions 22-27: Left column (top to bottom) - 6 properties
+        Board layout (starting from bottom-right, going counter-clockwise):
+        - Position 0: Bottom-right corner
+        - Positions 1-6: Bottom row (right to left) - 6 properties
+        - Position 7: Bottom-left corner
+        - Positions 8-13: Left column (bottom to top) - 6 properties
+        - Position 14: Top-left corner
+        - Positions 15-20: Top row (left to right) - 6 properties
+        - Position 21: Top-right corner
+        - Positions 22-27: Right column (top to bottom) - 6 properties
         
         Returns:
             (x, y, width, height) tuple for the property space
@@ -44,45 +44,45 @@ class PositionCalculator:
         t = self.cell_size
         bs = self.board_size
         
-        # Position 0: Bottom-left corner
+        # Position 0: Bottom-right corner
         if board_position == 0:
-            return (m, m + bs - c, c, c)
-        
-        # Positions 1-6: Bottom row (left to right)
-        elif 1 <= board_position <= 6:
-            idx = board_position - 1
-            x = m + c + idx * t
-            return (x, m + bs - c, t, c)
-        
-        # Position 7: Bottom-right corner
-        elif board_position == 7:
             return (m + bs - c, m + bs - c, c, c)
         
-        # Positions 8-13: Right column (bottom to top)
+        # Positions 1-6: Bottom row (right to left)
+        elif 1 <= board_position <= 6:
+            idx = board_position - 1
+            x = m + bs - c - (idx + 1) * t
+            return (x, m + bs - c, t, c)
+        
+        # Position 7: Bottom-left corner
+        elif board_position == 7:
+            return (m, m + bs - c, c, c)
+        
+        # Positions 8-13: Left column (bottom to top)
         elif 8 <= board_position <= 13:
             idx = board_position - 8
             y = m + bs - c - (idx + 1) * t
-            return (m + bs - c, y, c, t)
+            return (m, y, c, t)
         
-        # Position 14: Top-right corner
+        # Position 14: Top-left corner
         elif board_position == 14:
-            return (m + bs - c, m, c, c)
-        
-        # Positions 15-20: Top row (right to left)
-        elif 15 <= board_position <= 20:
-            idx = board_position - 15
-            x = m + bs - c - (idx + 1) * t
-            return (x, m, t, c)
-        
-        # Position 21: Top-left corner
-        elif board_position == 21:
             return (m, m, c, c)
         
-        # Positions 22-27: Left column (top to bottom)
+        # Positions 15-20: Top row (left to right)
+        elif 15 <= board_position <= 20:
+            idx = board_position - 15
+            x = m + c + idx * t
+            return (x, m, t, c)
+        
+        # Position 21: Top-right corner
+        elif board_position == 21:
+            return (m + bs - c, m, c, c)
+        
+        # Positions 22-27: Right column (top to bottom)
         elif 22 <= board_position <= 27:
             idx = board_position - 22
             y = m + c + idx * t
-            return (m, y, c, t)
+            return (m + bs - c, y, c, t)
         
         else:
             # Invalid position

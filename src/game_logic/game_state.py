@@ -198,6 +198,73 @@ class GameState:
         """Move to the next player's turn"""
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
     
+    def roll_dice(self, sides=6, num_dice=2):
+        """
+        Roll dice and return the total.
+        
+        Args:
+            sides: Number of sides on each die (default 6)
+            num_dice: Number of dice to roll (default 2)
+        
+        Returns:
+            Total of all dice rolls
+        """
+        import random
+        total = 0
+        for _ in range(num_dice):
+            total += random.randint(1, sides)
+        return total
+    
+    def move_player(self, player, dice_roll):
+        """
+        Move a player based on dice roll.
+        Handles board wrapping and GO bonuses.
+        
+        Args:
+            player: Player object to move
+            dice_roll: Total dice roll (e.g., 2-12 for two dice)
+        
+        Returns:
+            (new_position: int, passed_go: bool, landed_on_go: bool)
+        """
+        old_position = player.position
+        new_position = (old_position + dice_roll) % 28
+        
+        # Check if player passed GO (wrapped around the board)
+        passed_go = (old_position + dice_roll) >= 28
+        
+        # Check if player landed on GO
+        landed_on_go = (new_position == 0)
+        
+        # Update player position
+        player.position = new_position
+        
+        # Handle GO bonuses
+        if passed_go or landed_on_go:
+            # Collect $200 for passing or landing on GO
+            player.add_money(200)
+        
+        return new_position, passed_go, landed_on_go
+    
+    def roll_and_move(self, player, dice_roll=None):
+        """
+        Roll dice and move player in one action.
+        If dice_roll is provided, use that instead of rolling.
+        
+        Args:
+            player: Player object to move
+            dice_roll: Optional dice roll value (if None, will roll dice)
+        
+        Returns:
+            (dice_roll: int, new_position: int, passed_go: bool, landed_on_go: bool)
+        """
+        if dice_roll is None:
+            dice_roll = self.roll_dice()
+        
+        new_position, passed_go, landed_on_go = self.move_player(player, dice_roll)
+        
+        return dice_roll, new_position, passed_go, landed_on_go
+    
     def initialize_all_properties(self):
         """
         Initialize all 28 properties on the board.
