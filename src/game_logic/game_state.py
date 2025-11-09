@@ -209,26 +209,43 @@ class GameState:
         
         # Positions 1-6: Bottom row (left to right)
         # TODO: Add your actual properties here
-        # Example:
-        # self.add_property("Mediterranean Avenue", 1, 60, 2, "brown")
-        # self.add_property("Baltic Avenue", 2, 60, 4, "brown")
-        # ... etc for positions 1-6
-        
+        self.add_property("JARVIS", 1,60,20, property_type="property")
+        self.add_property("BONNER", 2,60,20, property_type="property")
+        self.add_property("EDUROAM", 3,180,100, property_type="special")
+        self.add_property("FURNAS", 4,100,40, property_type="property")
+        self.add_property("KNOW", 5,100,40, property_type="property")
+        self.add_property("KETTER", 6,120,60, property_type="property")
+
         # Position 7: Bottom-right corner
-        self.add_property("Jail", 7, 0, 0, property_type='special')
-        
+        self.add_property("JAIL", 7, 0, 0, property_type='visiting') #only on with this type
+
         # Positions 8-13: Right column (bottom to top)
-        # TODO: Add properties for positions 8-13
-        
+        self.add_property("GOVENORS", 8, 140, 70, property_type='property')
+        self.add_property("HADLY", 9, 160, 80, property_type='property')
+        self.add_property("GRIENER", 10, 180, 90, property_type='property')
+        self.add_property("LOST", 11, 140, 100, property_type='special')
+        self.add_property("ELLICOTT", 12, 180, 95, property_type='property')
+        self.add_property("FLINT", 13, 200, 100, property_type='property')
+
         # Position 14: Top-right corner
-        self.add_property("Free Parking", 14, 0, 0, property_type='special')
-        
+        self.add_property("FREE PARKING", 14, 0, 0, property_type='parking')
         # Positions 15-20: Top row (right to left)
-        # TODO: Add properties for positions 15-20
+        self.add_property("NSC", 15, 220, 105, property_type='property')
+        self.add_property("DINNING RELOAD", 16, 220, 105, property_type='special')
+        self.add_property("SILVERMAN", 17, 240, 110, property_type='property')
+        self.add_property("LOCKWOOD", 18, 250, 125, property_type='property')
+        self.add_property("SLEE", 19, 250, 130, property_type='property')
+        self.add_property("ACADEMIC CENTER", 20, 280, 140, property_type='property')
         
         # Position 21: Top-left corner
-        self.add_property("Go to Jail", 21, 0, 0, property_type='special')
-        
+        self.add_property("GO TO JAIL", 21, 0, 0, property_type='jail')
+        self.add_property("CAPEN", 22, 300, 150, property_type='property')
+        self.add_property("TALBERT", 23, 300, 150, property_type='property')
+        self.add_property("EMON", 24, 180, 100, property_type='special')
+        self.add_property("BALDY", 25, 320, 160, property_type='property')
+        self.add_property("DAVIS", 26, 350, 175, property_type='property')
+        self.add_property("COMMONS", 27, 400, 200, property_type='property')
+
         # Positions 22-27: Left column (top to bottom)
         # TODO: Add properties for positions 22-27
 
