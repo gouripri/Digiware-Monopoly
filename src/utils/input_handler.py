@@ -50,8 +50,7 @@ class InputHandler:
             
             self.serial_connection = serial.Serial(self.port, self.baud_rate, timeout=0.1)
             time.sleep(2)  # Wait for Arduino to reset
-            print(f"✓ Connected to Arduino on {self.port}")
-            print(f"  Waiting for messages (e.g., 'P1,Roll')...")
+            print(f"Connected to Arduino on {self.port}")
             return True
         except Exception as e:
             print(f"Failed to connect to Arduino: {e}")
@@ -206,9 +205,6 @@ class InputHandler:
                 if not line:
                     return False, 0, None
                 
-                # Debug: print received message
-                print(f"[Arduino] Received: '{line}'")
-                
                 # Debounce: ignore inputs too close together
                 current_time = time.time()
                 if current_time - self.last_input_time < self.input_debounce:
@@ -219,10 +215,7 @@ class InputHandler:
                 has_input, player_num, action = self.parse_arduino_message(line)
                 
                 if has_input:
-                    print(f"[Arduino] Parsed: player={player_num}, action={action}")
                     return True, player_num, action
-                else:
-                    print(f"[Arduino] Could not parse message: '{line}'")
                 
         except Exception as e:
             print(f"Error reading Serial: {e}")
@@ -253,7 +246,6 @@ class InputHandler:
             
             # In single player mode, always accept actions (only one player)
             if action_upper == "ROLL":
-                print(f"[Game] Triggering dice roll for player {player_num}")
                 return ('roll_dice', {'player_num': 1})
             elif action_upper == "BUY":
                 return ('buy', {'player_num': 1})
