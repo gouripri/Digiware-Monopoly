@@ -24,24 +24,33 @@ class BoardRenderer:
         self.board_surface = pygame.Surface((self.board_size, self.board_size))
         self.board_color = (240,235,210)  # light beige board color
         self.border_color = (0, 0, 0)
+        
+        # Load board background image
+        self.board_background = None
+        self._load_board_background()
 
     def render(self):
         """Render the Monopoly board"""
-        # TODO: Implement board rendering
-        board_rect = pygame.Rect(
-            self.margin,  # x offset
-            self.margin,  # y offset
-            self.board_size,  # width
-            self.board_size  # height
-        )
-        self.board_surface.fill(self.board_color)
-        pygame.draw.rect(self.board_surface, self.border_color,
-                         (0, 0, self.board_size, self.board_size), 3)
-        self.screen.blit(self.board_surface, (self.margin, self.margin))
+        # Draw board background image if available
+        if self.board_background:
+            # Scale background to fit board size
+            scaled_bg = pygame.transform.scale(self.board_background, (self.board_size, self.board_size))
+            self.screen.blit(scaled_bg, (self.margin, self.margin))
+        else:
+            # Fallback to colored background if no image
+            board_rect = pygame.Rect(
+                self.margin,  # x offset
+                self.margin,  # y offset
+                self.board_size,  # width
+                self.board_size  # height
+            )
+            self.board_surface.fill(self.board_color)
+            pygame.draw.rect(self.board_surface, self.border_color,
+                             (0, 0, self.board_size, self.board_size), 3)
+            self.screen.blit(self.board_surface, (self.margin, self.margin))
 
-        self.draw_corners()
-        self.draw_tiles()
-        self.draw_position_numbers()  # Show position numbers for testing
+        # Draw position numbers for testing (can remove later)
+        self.draw_position_numbers()
 
     def draw_corners(self):
         c_size = self.corner_size
@@ -57,29 +66,8 @@ class BoardRenderer:
         pygame.draw.rect(self.screen, color, (m + self.board_size - c_size, m + self.board_size - c_size, c_size, c_size), 2)
 
     def draw_tiles(self):
-        color = (0, 0, 0)
-        c= self.corner_size
-        t = self.cell_size
-        margin= self.margin
-        # Top edge (left → right, skipping corners)
-        for i in range(self.cell_count):
-            x = margin + c + i * t
-            pygame.draw.rect(self.screen, color, (x, margin, t, c), 2)
-
-        # Bottom edge
-        for i in range(self.cell_count):
-            x = margin + c + i * t
-            pygame.draw.rect(self.screen, color, (x, margin+ self.board_size - c, t, c), 2)
-
-        # Left edge
-        for i in range(self.cell_count):
-            y = margin + c + i * t
-            pygame.draw.rect(self.screen, color, (margin, y, c, t), 2)
-
-        # Right edge
-        for i in range(self.cell_count):
-            y = margin + c + i * t
-            pygame.draw.rect(self.screen, color, (margin+self.board_size - c, y, c, t), 2)
+        """Draw tile outlines - currently empty, can add back if needed"""
+        pass
     
     def draw_position_numbers(self):
         """Draw position numbers (0-27) on each space for testing/alignment"""
@@ -88,13 +76,22 @@ class BoardRenderer:
         for position in range(28):
             x, y, w, h = self.position_calc.get_position_rect(position)
             
-            # Draw a colored rectangle to show the position
-            color = (100, 200, 255)  # Light blue for visibility
-            pygame.draw.rect(self.screen, color, (x, y, w, h), 1)
-            
-            # Draw position number
+            # Draw position number (no rectangle background)
             text = font.render(str(position), True, (0, 0, 0))
             text_rect = text.get_rect(center=(x + w // 2, y + h // 2))
             self.screen.blit(text, text_rect)
+    
+    def _load_board_background(self):
+        """Load the board background image"""
+        import os
+        try:
+            image_path = "images/images/properties/Group 46.png"
+            if os.path.exists(image_path):
+                self.board_background = pygame.image.load(image_path)
+                print(f"Loaded board background: {image_path}")
+            else:
+                print(f"Warning: Board background image not found: {image_path}")
+        except Exception as e:
+            print(f"Error loading board background: {e}")
 
 
