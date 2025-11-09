@@ -17,6 +17,7 @@ class DiceAnimation:
         self.animation_frame = 0
         self.animation_duration = 50  # Number of frames to animate (longer animation)
         self.current_dice_value = 1
+        self.just_finished = False  # Flag to track when animation just finished
         # Position: middle of board (400, 400), then down and right a bit
         self.dice_position = (450, 450)  # Center of board, slightly down and right
         self.dice_size = (100, 100)  # Size of dice display
@@ -50,12 +51,14 @@ class DiceAnimation:
         """Start the dice rolling animation"""
         self.is_animating = True
         self.animation_frame = 0
+        self.just_finished = False
         self.current_dice_value = random.randint(1, 6)
     
     def stop_animation(self, final_value=None):
         """Stop the animation and set final dice value"""
         self.is_animating = False
         self.animation_frame = 0
+        self.just_finished = True
         if final_value is not None:
             self.current_dice_value = final_value
     
@@ -70,7 +73,10 @@ class DiceAnimation:
             
             # Stop animation after duration
             if self.animation_frame >= self.animation_duration:
+                # Set final random dice value when animation ends
+                self.current_dice_value = random.randint(1, 6)
                 self.is_animating = False
+                self.just_finished = True
                 self.animation_frame = 0
     
     def render(self):

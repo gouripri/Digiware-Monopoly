@@ -74,6 +74,38 @@ class InputHandler:
             self.serial_connection.close()
             print("Disconnected from Arduino")
     
+    def send_to_arduino(self, message):
+        """
+        Send a message to Arduino via Serial.
+        
+        Args:
+            message: String message to send to Arduino
+        """
+        if self.test_mode:
+            print(f"[TEST MODE] Would send to Arduino: {message}")
+            return
+        
+        if self.serial_connection is None or not self.serial_connection.is_open:
+            return
+        
+        try:
+            # Send message with newline (Arduino typically reads line by line)
+            message_with_newline = f"{message}\n"
+            self.serial_connection.write(message_with_newline.encode('utf-8'))
+        except Exception as e:
+            print(f"Error sending message to Arduino: {e}")
+    
+    def send_property_name(self, property_name):
+        """
+        Send the current property name to Arduino.
+        Format: "Property: <name>"
+        
+        Args:
+            property_name: Name of the property the player is on
+        """
+        if property_name:
+            self.send_to_arduino(f"Property: {property_name}")
+    
     def set_state(self, state):
         """Set the current game state"""
         self.current_state = state
@@ -84,62 +116,85 @@ class InputHandler:
     
     def parse_arduino_message(self, message):
         """
-        Parse message from Arduino and extract direction/action.
-        MODIFY THIS FUNCTION when you know the Arduino message format.
+        Parse message from Arduino.
+        Format: "Roll", "Buy", "Pass" (single player mode)
+        Also supports: "P1,Roll" format for compatibility
         
         Args:
-            message: Raw string from Arduino Serial
+            message: Raw string from Arduino Serial (e.g., "Roll" or "P1,Roll")
         
         Returns:
-            (has_input: bool, direction: int, button_pressed: bool)
+            (has_input: bool, player_num: int, action: str)
             - has_input: True if message contains valid input
-            - direction: 1 for clockwise, -1 for counterclockwise, 0 for no rotation
-            - button_pressed: True if button was pressed
+            - player_num: Player number (1 for single player, or from message)
+            - action: Action string (e.g., "Roll", "Buy", "Pass") or None
         """
-        message = message.strip().lower()
+        message = message.strip()
         
-        # TODO: Modify this based on your Arduino message format
-        # Examples of what you might receive:
-        # - "clockwise" or "cw" or "1"
-        # - "counterclockwise" or "ccw" or "-1"
-        # - "button" or "press" or "b"
-        # - Combined: "cw,button" or "1,1"
+        # Parse format: "P1,Roll" or "P2,Buy" etc. (for compatibility)
+        if ',' in message:
+            parts = message.split(',')
+            if len(parts) == 2:
+                player_part = parts[0].strip().upper()
+                action_part = parts[1].strip()
+                
+                # Extract player number from "P1", "P2", etc.
+                player_num = 0
+                if player_part.startswith('P') and len(player_part) > 1:
+                    try:
+                        player_num = int(player_part[1:])
+                    except ValueError:
+                        pass
+                
+                # Return parsed values
+                if player_num > 0 and action_part:
+                    return True, player_num, action_part
         
+        # Single player mode: just action words like "Roll", "Buy", "Pass"
+        message_upper = message.upper()
+        if message_upper in ["ROLL", "BUY", "PASS"]:
+            # Single player mode - always player 1
+            return True, 1, message_upper
+        
+        # Fallback: try to parse old format for backwards compatibility
+        message_lower = message.lower()
         has_input = False
         direction = 0
         button_pressed = False
         
-        # Example parsing (adjust based on your Arduino format):
-        if "clockwise" in message or "cw" in message or message == "1":
+        if "clockwise" in message_lower or "cw" in message_lower or message == "1":
             has_input = True
             direction = 1
-        elif "counterclockwise" in message or "ccw" in message or message == "-1":
+        elif "counterclockwise" in message_lower or "ccw" in message_lower or message == "-1":
             has_input = True
             direction = -1
         
-        if "button" in message or "press" in message or "b" in message:
+        if "button" in message_lower or "press" in message_lower or "b" in message_lower:
             has_input = True
             button_pressed = True
         
-        return has_input, direction, button_pressed
+        # Return old format if found, otherwise no input
+        if has_input:
+            return True, 0, None  # Old format, no player number
+        return False, 0, None
     
     def read_input(self):
         """
         Read input from Serial (non-blocking).
         
-        Returns: (has_input: bool, direction: int, button_pressed: bool)
+        Returns: (has_input: bool, player_num: int, action: str)
         - has_input: True if new input was received
-        - direction: 1 for clockwise, -1 for counterclockwise, 0 for no rotation
-        - button_pressed: True if button was pressed
+        - player_num: Player number (1, 2, 3, etc.) or 0 if not specified
+        - action: Action string (e.g., "Roll", "Buy", "Pass") or None
         """
         if self.test_mode:
             # Test mode: return queued test inputs
             if self.test_input_queue:
                 return self.test_input_queue.pop(0)
-            return False, 0, False
+            return False, 0, None
         
         if self.serial_connection is None or not self.serial_connection.is_open:
-            return False, 0, False
+            return False, 0, None
         
         try:
             # Check if data is available (non-blocking)
@@ -148,100 +203,104 @@ class InputHandler:
                 line = self.serial_connection.readline().decode('utf-8', errors='ignore').strip()
                 
                 if not line:
-                    return False, 0, False
+                    return False, 0, None
                 
                 # Debounce: ignore inputs too close together
                 current_time = time.time()
                 if current_time - self.last_input_time < self.input_debounce:
-                    return False, 0, False
+                    return False, 0, None
                 self.last_input_time = current_time
                 
                 # Parse the message using helper function
-                has_input, direction, button_pressed = self.parse_arduino_message(line)
+                has_input, player_num, action = self.parse_arduino_message(line)
                 
                 if has_input:
-                    return True, direction, button_pressed
+                    return True, player_num, action
                 
         except Exception as e:
             print(f"Error reading Serial: {e}")
         
-        return False, 0, False
+        return False, 0, None
     
     def process_input(self, game_state=None):
         """
         Process input and return what action to take.
+        Single player mode: accepts "Roll", "Buy", "Pass" directly.
         
         Args:
             game_state: Current GameState object (optional, for context)
         
         Returns:
             (action: str, data: dict) or None
-            Actions: 'buy', 'pass', 'roll_dice', 'select_next', 'select_prev', 'confirm'
+            Actions: 'roll_dice', 'buy', 'pass', etc.
+            data contains: 'player_num' (1-indexed player number)
         """
-        has_input, direction, button_pressed = self.read_input()
+        has_input, player_num, action = self.read_input()
         
         if not has_input:
             return None
         
-        # Map input to action based on current game state
-        if self.current_state == self.STATE_LANDED_ON_PROPERTY:
-            # Player just landed on a property
-            if direction == 1:  # Clockwise
-                return ('select_buy', {})
-            elif direction == -1:  # Counterclockwise
-                return ('select_pass', {})
-            elif button_pressed:  # Button press to confirm
-                return ('confirm', {})
+        # Single player mode: if we have an action, process it (always for player 1)
+        if action:
+            action_upper = action.upper()
+            
+            # In single player mode, always accept actions (only one player)
+            if action_upper == "ROLL":
+                return ('roll_dice', {'player_num': 1})
+            elif action_upper == "BUY":
+                return ('buy', {'player_num': 1})
+            elif action_upper == "PASS":
+                return ('pass', {'player_num': 1})
         
-        elif self.current_state == self.STATE_WAITING_FOR_ROLL:
-            # Waiting for player to roll dice
-            if button_pressed or direction != 0:  # Button or encoder turn to roll
-                return ('roll_dice', {})
-        
-        elif self.current_state == self.STATE_MENU_NAVIGATION:
-            # Navigating a menu
-            if direction == 1:  # Clockwise
-                return ('select_next', {})
-            elif direction == -1:  # Counterclockwise
-                return ('select_prev', {})
-            elif button_pressed:  # Button to select
-                return ('confirm', {})
-        
-        elif self.current_state == self.STATE_PLAYER_TURN:
-            # General player turn actions
-            if direction == 1:
-                return ('next_action', {})
-            elif direction == -1:
-                return ('prev_action', {})
-            elif button_pressed:
-                return ('confirm', {})
+        # Multi-player format: "P1,Roll" style messages (for compatibility)
+        if player_num > 0 and action:
+            action_upper = action.upper()
+            
+            # Check if this is for the current player
+            current_player_index = 0
+            if game_state:
+                current_player_index = game_state.current_player_index
+            
+            # Player numbers are 1-indexed, current_player_index is 0-indexed
+            if player_num == (current_player_index + 1):
+                # This message is for the current player
+                if action_upper == "ROLL":
+                    return ('roll_dice', {'player_num': player_num})
+                elif action_upper == "BUY":
+                    return ('buy', {'player_num': player_num})
+                elif action_upper == "PASS":
+                    return ('pass', {'player_num': player_num})
         
         return None
     
     # ========== TESTING HELPER FUNCTIONS ==========
     
-    def add_test_input(self, direction=0, button_pressed=False):
+    def add_test_input(self, player_num=0, action=None):
         """
         Add test input for testing without Arduino.
         Useful for development and testing.
         
         Args:
-            direction: 1 for clockwise, -1 for counterclockwise, 0 for none
-            button_pressed: True if button was pressed
+            player_num: Player number (1, 2, 3, etc.) or 0 for old format
+            action: Action string (e.g., "Roll", "Buy", "Pass") or None
         """
-        self.test_input_queue.append((True, direction, button_pressed))
+        self.test_input_queue.append((True, player_num, action))
+    
+    def simulate_player_roll(self, player_num):
+        """Helper: Simulate player rolling dice (e.g., "P1,Roll")"""
+        self.add_test_input(player_num=player_num, action="Roll")
     
     def simulate_clockwise_turn(self):
-        """Helper: Simulate clockwise encoder turn"""
-        self.add_test_input(direction=1, button_pressed=False)
+        """Helper: Simulate clockwise encoder turn (old format)"""
+        self.add_test_input(player_num=0, action=None)
     
     def simulate_counterclockwise_turn(self):
-        """Helper: Simulate counterclockwise encoder turn"""
-        self.add_test_input(direction=-1, button_pressed=False)
+        """Helper: Simulate counterclockwise encoder turn (old format)"""
+        self.add_test_input(player_num=0, action=None)
     
     def simulate_button_press(self):
-        """Helper: Simulate button press"""
-        self.add_test_input(direction=0, button_pressed=True)
+        """Helper: Simulate button press (old format)"""
+        self.add_test_input(player_num=0, action=None)
     
     def clear_test_inputs(self):
         """Clear all queued test inputs"""

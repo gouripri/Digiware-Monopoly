@@ -10,6 +10,8 @@ class Player:
         self.money = starting_money
         self.position = 0  # Board position (0-27)
         self.properties = []  # List of Property objects owned
+        self.in_jail = False  # True if player is in jail and must skip next turn
+        self.jail_turn_skipped = False  # True if player has already skipped their turn in jail
         
     def add_money(self, amount):
         """Add money to player"""
@@ -198,16 +200,33 @@ class GameState:
         """Move to the next player's turn"""
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
     
-    def roll_dice(self, sides=6, num_dice=2):
+    def should_skip_turn(self, player):
+        """
+        Check if a player should skip their turn (e.g., in jail)
+        Returns: (should_skip: bool, reason: str)
+        """
+        if player.in_jail and not player.jail_turn_skipped:
+            # Player is in jail and hasn't skipped their turn yet
+            player.jail_turn_skipped = True
+            return True, f"{player.name} is in jail and must skip this turn"
+        elif player.in_jail and player.jail_turn_skipped:
+            # Player has skipped their turn, release from jail
+            player.in_jail = False
+            player.jail_turn_skipped = False
+            return False, f"{player.name} is released from jail"
+        
+        return False, None
+    
+    def roll_dice(self, sides=6, num_dice=1):
         """
         Roll dice and return the total.
         
         Args:
             sides: Number of sides on each die (default 6)
-            num_dice: Number of dice to roll (default 2)
+            num_dice: Number of dice to roll (default 1 - single die, 1-6)
         
         Returns:
-            Total of all dice rolls
+            Total of all dice rolls (1-6 for single die)
         """
         import random
         total = 0
@@ -218,14 +237,14 @@ class GameState:
     def move_player(self, player, dice_roll):
         """
         Move a player based on dice roll.
-        Handles board wrapping and GO bonuses.
+        Handles board wrapping, GO bonuses, and Go to Jail.
         
         Args:
             player: Player object to move
-            dice_roll: Total dice roll (e.g., 2-12 for two dice)
+            dice_roll: Total dice roll (1-6 for single die)
         
         Returns:
-            (new_position: int, passed_go: bool, landed_on_go: bool)
+            (new_position: int, passed_go: bool, landed_on_go: bool, went_to_jail: bool)
         """
         old_position = player.position
         new_position = (old_position + dice_roll) % 28
@@ -236,6 +255,17 @@ class GameState:
         # Check if player landed on GO
         landed_on_go = (new_position == 0)
         
+        # Check if player landed on Go to Jail (position 21)
+        went_to_jail = (new_position == 21)
+        
+        # Handle Go to Jail rule
+        if went_to_jail:
+            # Send player to Jail (position 7)
+            new_position = 7
+            # Mark player as in jail (must skip next turn)
+            player.in_jail = True
+            player.jail_turn_skipped = False
+        
         # Update player position
         player.position = new_position
         
@@ -244,7 +274,7 @@ class GameState:
             # Collect $200 for passing or landing on GO
             player.add_money(200)
         
-        return new_position, passed_go, landed_on_go
+        return new_position, passed_go, landed_on_go, went_to_jail
     
     def roll_and_move(self, player, dice_roll=None):
         """
@@ -256,14 +286,14 @@ class GameState:
             dice_roll: Optional dice roll value (if None, will roll dice)
         
         Returns:
-            (dice_roll: int, new_position: int, passed_go: bool, landed_on_go: bool)
+            (dice_roll: int, new_position: int, passed_go: bool, landed_on_go: bool, went_to_jail: bool)
         """
         if dice_roll is None:
             dice_roll = self.roll_dice()
         
-        new_position, passed_go, landed_on_go = self.move_player(player, dice_roll)
+        new_position, passed_go, landed_on_go, went_to_jail = self.move_player(player, dice_roll)
         
-        return dice_roll, new_position, passed_go, landed_on_go
+        return dice_roll, new_position, passed_go, landed_on_go, went_to_jail
     
     def initialize_all_properties(self):
         """

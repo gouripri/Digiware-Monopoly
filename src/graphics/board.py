@@ -49,8 +49,7 @@ class BoardRenderer:
                              (0, 0, self.board_size, self.board_size), 3)
             self.screen.blit(self.board_surface, (self.margin, self.margin))
 
-        # Draw position numbers for testing (can remove later)
-        self.draw_position_numbers()
+        # Position numbers removed
 
     def draw_corners(self):
         c_size = self.corner_size
