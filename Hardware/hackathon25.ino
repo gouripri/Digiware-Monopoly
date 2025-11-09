@@ -4,6 +4,7 @@
 
 const char *Roll = "ROLL"; 
 const char* GO_COMMAND = "go";
+int current_prop = 0; // index of currently shown property (global)
 
 class Properties {       
 public: 
@@ -34,28 +35,48 @@ void setup() {
     nrf_setup_reciever();
 }
 
+void addProperty(String name, int rent = 0) {
+    if (prop_size < 30) {
+        all_props[prop_size].name = name;
+        all_props[prop_size].Rent = rent;
+        prop_size++;
+        current_prop = prop_size - 1; // show the newly added property immediately
+    }
+}
+
 void loop() {
-  String landed = recieve_landing();
-  if (landed != "none" && !waiting_for_buy) {
-      waiting_for_buy = true;
-      mode = FINAL;
-      menu = OUTSIDE_OPT;
-      options = 0; // default to Buy
-      updateScreen("Buy or Skip");
-  }
+    String landed = recieve_landing();
 
+    // Trigger Buy/Skip menu if a property is landed
+    if (landed != "none" && !waiting_for_buy) {
+        waiting_for_buy = true;
+        mode = FINAL;
+        menu = OUTSIDE_OPT;
+        options = 0;
+        roll_clicked = false;
+        updateScreen("Buy or Skip");
+    }
 
-    if(Start_menu != 2){
+    // If roll finished but no property landed
+    if (landed == "none" && mode == WAIT) {
+        mode = START;
+        menu = OUTSIDE_OPT;
+        roll_clicked = true;
+        general_menu();
+    }
+
+    // Start menu flow
+    if (Start_menu != 2){
         game_start();
         return; // skip rest of loop until start menu done
     }
 
-  
+    // Handle "go" command
     if (recieve_and_go()){
         setStateTurn();
     }
 
-
+    // OUTSIDE_OPT menu
     if (menu == OUTSIDE_OPT){
         general_menu();
         if (click()){
@@ -64,37 +85,36 @@ void loop() {
         }
     }
 
-if (menu == INSIDE_OPT) {
-     if (click() && display_balance) {
-        menu = OUTSIDE_OPT;
-        display_balance = false;
-        general_menu();
+    // INSIDE_OPT menu
+    if (menu == INSIDE_OPT) {
+        if (click() && display_balance) {
+            menu = OUTSIDE_OPT;
+            display_balance = false;
+            general_menu();
+        }
+
+        if (click() && display_property) {
+            menu = OUTSIDE_OPT;
+            display_property = false;
+            general_menu();
+        }
+
+        if (click() && roll_clicked && mode != FINAL) {
+            menu = AFTER_ROLL;
+            mode = WAIT;
+            roll_clicked = false;
+            general_menu();
+        }
     }
 
-       if (click() && display_property) {
-        menu = OUTSIDE_OPT;
-        display_property = false;
-        general_menu();
-    }
-
-     if (click() && roll_clicked && mode != FINAL) {
-        menu = AFTER_ROLL;
-        mode = WAIT;
-        roll_clicked = false;
-        general_menu();
-    }
-}
-
-
-    
-
-
+    // FINAL mode: Buy/Skip
     if (mode == FINAL && waiting_for_buy) {
-        general_menu();
+        general_menu(); // always displays Buy/Skip
 
         if (click()) {
             if (options == 0) { // Buy
                 updateScreen("Bought!");
+                addProperty(landed);
                 send("BUY");
                 delay(800);
             } 
@@ -104,34 +124,19 @@ if (menu == INSIDE_OPT) {
                 delay(800);
             }
 
-            // Reset to START
+            // ✅ End of Buy/Skip action
+            updateScreen("Turn done!");
+            delay(800);
             waiting_for_buy = false;
-            mode = START;
-            Start_menu = 0;
-            menu = 0;
+            mode = PTURN;          // back to player’s turn menu
+            menu = OUTSIDE_OPT;    // ready to pick options again
             roll_clicked = true;
             general_menu();
         }
     }
-
-   // String landed = recieve_landing();
-    if(landed != "none"){
-        // Trigger FINAL state menu
-        waiting_for_buy = true;
-        mode = FINAL;
-        menu = OUTSIDE_OPT;
-        options = 0; // default to Buy
-        updateScreen("Buy or Skip");
-    }
 }
 
-
-
-
-
-
-
-
+// --- Helper Functions ---
 
 void roll(){
     roll_clicked = true;
@@ -173,30 +178,36 @@ void enter_option() {
     }
 }
 
-
 void viewBalance(){
     updateScreen(String(balance));
 }
 
-void viewProp(){
-    if (prop_size == 0){
+void viewProp() {
+    if (prop_size == 0) {
         updateScreen("none");
+        current_prop = 0;
     } else {
-        updateScreen(all_props[0].name); 
+        int move = turn(); // use rotary to browse
+        if (move != 0) {
+            current_prop = (current_prop + move) % prop_size;
+            if (current_prop < 0) current_prop += prop_size;
+        }
+        updateScreen(all_props[current_prop].name);
     }
     display_property = true;
 }
 
-
 void general_menu() {
-    if (update_options() || mode == FINAL) { 
+    if (mode == FINAL) {
+        Final_Screen();  // always display Buy/Skip
+        return;
+    }
+    if (update_options()) { 
         if (mode == START) Start_screen();
         else if (mode == PTURN) Pturn_screen();
         else if (mode == WAIT) updateScreen("");
-        else if (mode == FINAL) Final_Screen();
     }
 }
-
 
 int game_start(){
     if (Start_menu ==0){
@@ -228,8 +239,8 @@ bool update_options(){
 
     return change;
 }
-void update_choose_icon(){ }
 
+void update_choose_icon(){ }
 
 void Start_screen(){
     if (options == 0) updateScreen("Properties");
