@@ -25,4 +25,3 @@ void send_property(const char* property);
 
 
 #endif
-
