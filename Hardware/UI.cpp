@@ -35,27 +35,3 @@ void updateScreen(String text){
 
 }
 
-
-
-void scroll_options(){
-  
-}
-
-
-void Start_setup(){
-
-  
-}
-
-
-void Pturn_setup(){
-
-}
-
-void Wait_setup(){
-
-}
-
-void Final_Setup(){
-  
-}
